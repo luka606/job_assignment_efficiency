@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Efficiency Board · Home Alliance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============ design tokens ============ */
+:root{
+  --bg:#F3F4F1; --bg-2:#EBEDE8; --panel:#FFFFFF; --panel-2:#FAFBF9;
+  --ink:#1A2520; --ink-2:#5A695F; --ink-3:#8A968D; --line:#DFE3DC; --line-2:#EDF0EA;
+  --green:#1E6B4E; --green-hi:#2E8C68; --green-soft:#E2EFE8; --on-green:#fff;
+  --amber:#A66B08; --amber-soft:#FBF0D9;
+  --red:#B3402F; --red-soft:#F8E4E0;
+  --blue:#2B5D8A; --blue-soft:#E2ECF5;
+  --hdr:#16211B; --hdr-ink:#EDF2EE; --hdr-dim:#93A69A; --hdr-line:#2C3A32;
+  --shadow:0 1px 2px rgba(20,30,25,.05),0 4px 14px rgba(20,30,25,.05);
+  --shadow-lg:0 8px 30px rgba(20,30,25,.14);
+  --focus:0 0 0 3px rgba(30,107,78,.22);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Barlow',var(--sans);
+  --r:12px; --r-sm:8px;
+}
+[data-theme="dark"]{
+  --bg:#111815; --bg-2:#0C1210; --panel:#1A231E; --panel-2:#202A24;
+  --ink:#E6EDE8; --ink-2:#A4B2A8;
+  --ink-3:#75837A; --line:#2C372F; --line-2:#242E27;
+  --green:#3FA478; --green-hi:#4FBE8D; --green-soft:#1D3329; --on-green:#08130D;
+  --amber:#D69A3A; --amber-soft:#33290F;
+  --red:#D96D5B; --red-soft:#3A1F1A;
+  --blue:#6FA5D6; --blue-soft:#1B2B3A;
+  --hdr:#0C1210; --hdr-ink:#E6EDE8; --hdr-dim:#7E8F84; --hdr-line:#222D26;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.5);
+  --focus:0 0 0 3px rgba(63,164,120,.3);
+}
+/* ============ base ============ */
+*{box-sizing:border-box;margin:0}
+html{color-scheme:light}
+[data-theme="dark"]{color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;transition:background .25s,color .25s}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;outline:none;transition:border-color .15s,box-shadow .15s,background .25s}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:var(--focus)}
+input::placeholder{color:var(--ink-3)}
+::selection{background:var(--green-soft)}
+
+/* ============ header ============ */
+header{background:var(--hdr);color:var(--hdr-ink);padding:0 20px;display:flex;align-items:center;gap:22px;height:58px;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--hdr-line)}
+.brand{font-family:var(--disp);font-weight:800;font-size:15.5px;letter-spacing:.5px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .dot{width:9px;height:9px;border-radius:3px;background:#4CC08B;box-shadow:0 0 8px rgba(76,192,139,.7)}
+.brand .dot.off{background:#C05A4C;box-shadow:0 0 8px rgba(192,90,76,.7)}
+nav{display:flex;gap:2px;height:100%;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{background:none;border:none;color:var(--hdr-dim);font-family:var(--disp);font-weight:600;font-size:12.5px;letter-spacing:.6px;text-transform:uppercase;padding:0 13px;height:100%;border-bottom:3px solid transparent;white-space:nowrap;transition:color .15s}
+nav button:hover{color:var(--hdr-ink)}
+nav button.on{color:var(--hdr-ink);border-bottom-color:#4CC08B}
+.hdr-right{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--hdr-dim);white-space:nowrap;display:flex;gap:10px;align-items:center}
+.hdr-btn{background:none;border:1px solid var(--hdr-line);color:var(--hdr-dim);border-radius:7px;padding:5px 10px;font-size:11px;transition:.15s}
+.hdr-btn:hover{color:var(--hdr-ink);border-color:var(--hdr-dim)}
+#themeBtn{font-size:14px;line-height:1;padding:4px 9px}
+
+main{max-width:1420px;margin:0 auto;padding:24px 22px}
+.tab{display:none}.tab.on{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2{font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.2px;margin-bottom:4px}
+h3.pt{font-family:var(--disp);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-2);margin-bottom:12px}
+.sub{color:var(--ink-2);font-size:13px;margin-bottom:18px;max-width:900px}
+
+/* ============ panels ============ */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px;box-shadow:var(--shadow);transition:background .25s,border-color .25s}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.bar.tight{margin-bottom:0}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
+.btn{background:var(--green);color:var(--on-green);border:none;border-radius:var(--r-sm);padding:9px 18px;font-weight:600;font-size:13px;transition:.15s;box-shadow:var(--shadow)}
+.btn:hover{background:var(--green-hi);transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--ink-3);background:var(--panel-2)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.sm{padding:5px 11px;font-size:12px}
+
+/* ============ KPI cards ============ */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:background .25s,border-color .25s}
+.kpi::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--line)}
+.kpi.a::before{background:var(--green)}
+.kpi.b::before{background:var(--amber)}
+.kpi.c::before{background:var(--red)}
+.kpi .v{font-family:var(--disp);font-weight:800;font-size:30px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-2);margin-top:4px}
+.kpi.a .v{color:var(--green)}.kpi.b .v{color:var(--amber)}.kpi.c .v{color:var(--red)}
+
+/* ============ tables ============ */
+.twrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);transition:background .25s,border-color .25s}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-family:var(--disp);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-2);text-align:left;padding:10px 11px;background:var(--panel-2);border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:1}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink)}
+td{padding:8px 11px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--panel-2)}
+td.num{font-family:var(--mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;line-height:1.5}
+.badge.A,.badge.P1,.badge.yes{background:var(--green-soft);color:var(--green)}
+.badge.B{background:var(--amber-soft);color:var(--amber)}
+.badge.C,.badge.Pn,.badge.no{background:var(--red-soft);color:var(--red)}
+.badge.P2{background:var(--blue-soft);color:var(--blue)}
+.badge.gray{background:var(--line-2);color:var(--ink-2)}
+.warn-txt{color:var(--amber);font-size:12px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 2px 2px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.count-note{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.loading{color:var(--ink-2);font-size:13px;padding:18px;text-align:center;font-family:var(--mono)}
+
+/* ============ entry grid ============ */
+.entry-grid{display:grid;grid-template-columns:118px 105px 100px minmax(185px,1.4fr) 58px 58px 115px 74px minmax(160px,1fr) minmax(140px,1fr) 32px;gap:8px;align-items:center}
+.entry-grid.head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2);margin-bottom:6px}
+.entry-row{display:contents}
+.auto-cell{font-family:var(--mono);font-size:12px;color:var(--ink-2);text-align:center;background:var(--panel-2);border:1px dashed var(--line);border-radius:var(--r-sm);padding:8px 4px;min-height:34px}
+.rm{background:none;border:none;color:var(--ink-3);font-size:17px;line-height:1;transition:.15s}
+.rm:hover{color:var(--red)}
+.entry-warn{grid-column:1/-1;font-size:12px;color:var(--amber);padding:0 2px 8px;display:flex;align-items:center;gap:6px}
+
+/* ============ toast ============ */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--hdr);color:var(--hdr-ink);padding:13px 18px;border-radius:10px;font-size:13px;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:99;max-width:380px}
+.toast.show{opacity:1;transform:none}
+.toast.err{background:var(--red);color:#fff}
+
+/* ============ dashboard ============ */
+.dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:980px){.dash-cols{grid-template-columns:1fr}.entry-grid{grid-template-columns:1fr 1fr}.entry-grid.head{display:none}}
+.bar-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.bar-row .lbl{width:130px;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .trk{flex:1;height:16px;background:var(--line-2);border-radius:5px;overflow:hidden}
+.bar-row .fill{height:100%;background:var(--green);border-radius:5px;transition:width .4s ease}
+.bar-row .fill.alt{background:var(--blue)}
+.bar-row .val{font-family:var(--mono);font-size:11.5px;width:44px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ============ meeting ============ */
+.meet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:14px}
+.meet-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:background .25s,border-color .25s}
+.mc-head{display:flex;align-items:baseline;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.mc-name{font-family:var(--disp);font-weight:800;font-size:16px}
+.mc-stats{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.mc-body{padding:8px 0;max-height:330px;overflow:auto}
+.meet-line{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:baseline;padding:6px 15px;border-bottom:1px solid var(--line-2);font-size:12.5px}
+.meet-line:last-child{border-bottom:none}
+.meet-line .rsn{grid-column:1/-1;color:var(--ink-2);font-size:11.5px;padding-left:9px;border-left:2px solid var(--line)}
+.meet-line .rsn.w{color:var(--amber);border-left-color:var(--amber)}
+.meet-empty{padding:20px 15px;color:var(--ink-3);font-size:12.5px}
+
+/* ============ setup ============ */
+#setup{max-width:640px;margin:48px auto}
+#setup input{width:100%}
+.steps{font-size:13px;color:var(--ink-2);line-height:1.8;margin:12px 0 18px}
+.steps code{font-family:var(--mono);font-size:12px;background:var(--line-2);border-radius:5px;padding:1px 6px}
+footer{text-align:center;color:var(--ink-3);font-family:var(--mono);font-size:11px;padding:22px 0 32px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot" id="connDot"></span>JOB EFFICIENCY BOARD</div>
+  <nav id="nav" style="display:none">
+    <button data-tab="meet" class="on">Meeting</button>
+    <button data-tab="dash">Dashboard</button>
+    <button data-tab="entry">Daily Entry</button>
+    <button data-tab="db">Database</button>
+    <button data-tab="avail">Availability</button>
+    <button data-tab="techs">Technicians</button>
+    <button data-tab="team">Dispatchers</button>
+  </nav>
+  <div class="hdr-right">
+    <span id="syncBadge"></span><span id="hdrDate"></span>
+    <button class="hdr-btn" id="themeBtn" title="Toggle dark mode">◐</button>
+    <button class="hdr-btn" id="reconfig" style="display:none">Settings</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= SETUP ================= -->
+<section id="setup" class="panel">
+  <h2>Connect to Supabase</h2>
+  <div class="steps">
+    1. In Supabase run <code>schema.sql</code> (SQL Editor → New query → Run).<br>
+    2. Seed history with <code>assignments_seed.sql</code> and import <code>technicians.csv</code>.<br>
+    3. Paste the Project URL and <b>anon public</b> key from <code>Settings → API</code>. They are saved in this browser only.
+  </div>
+  <div class="fld" style="margin-bottom:10px"><label>Project URL</label><input id="cfgUrl" placeholder="https://xxxx.supabase.co"></div>
+  <div class="fld" style="margin-bottom:14px"><label>Anon public key</label><input id="cfgKey" placeholder="sb_publishable_… or eyJhbGciOi…"></div>
+  <button class="btn" id="cfgSave">Connect</button>
+  <span class="count-note" id="cfgStatus" style="margin-left:10px"></span>
+</section>
+
+<!-- ================= MEETING ================= -->
+<section class="tab" id="tab-meet">
+  <h2>Daily Meeting</h2>
+  <div class="sub">One card per dispatcher: how many jobs, to whom, and why. Flagged assignments show in amber. Updates live as entries come in.</div>
+  <div class="bar">
+    <div class="fld"><label>Meeting date</label><input type="date" id="meetDate"></div>
+    <button class="btn ghost" id="meetRefresh">Refresh</button>
+    <span class="count-note" id="meetNote"></span>
+  </div>
+  <div class="kpis" id="meetKpis"></div>
+  <div class="meet-grid" id="meetGrid"></div>
+</section>
+
+<!-- ================= DASHBOARD ================= -->
+<section class="tab" id="tab-dash">
+  <h2>Dashboard</h2>
+  <div class="sub" id="dashRangeNote"></div>
+  <div class="bar">
+    <div class="fld"><label>Range</label>
+      <select id="dashPreset">
+        <option value="today">Today</option>
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="custom">Custom</option>
+      </select></div>
+    <div class="fld"><label>From</label><input type="date" id="dashFrom"></div>
+    <div class="fld"><label>To</label><input type="date" id="dashTo"></div>
+    <div class="fld"><label>DSR</label><select id="dashDsr"><option value="">All DSRs</option></select></div>
+  </div>
+  <div class="kpis" id="dashKpis"></div>
+  <div class="dash-cols">
+    <div class="panel"><h3 class="pt">DSR Breakdown · Technician Tier</h3><div class="twrap"><table id="tblTier"></table></div></div>
+    <div class="panel"><h3 class="pt">DSR Breakdown · Technician Priority</h3><div class="twrap"><table id="tblPrio"></table></div></div>
+    <div class="panel"><h3 class="pt">Jobs by Region</h3><div id="regionBars"></div></div>
+    <div class="panel"><h3 class="pt">Jobs by Day</h3><div id="dayBars"></div></div>
+  </div>
+</section>
+
+<!-- ================= DAILY ENTRY ================= -->
+<section class="tab" id="tab-entry">
+  <h2>Daily Entry</h2>
+  <div class="sub">One row per technician you assigned jobs to (aggregate the count). Tier, Priority and Region fill automatically from the roster. Rows save straight to the shared database.</div>
+  <div class="panel">
+    <div class="bar">
+      <div class="fld"><label>Entry date</label><input type="date" id="entryDate"></div>
+      <div class="fld"><label>I am</label><select id="entryDsr"></select></div>
+      <button class="btn ghost" id="addRow">+ Add row</button>
+    </div>
+    <div class="entry-grid head">
+      <div>Date</div><div>DSR</div><div>Job Type</div><div>Technician</div><div>Tier</div><div>Priority</div><div>Region</div><div>Jobs</div><div>Reason</div><div>Notes</div><div></div>
+    </div>
+    <div id="entryRows" class="entry-grid"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <button class="btn" id="submitEntries">Submit to Database</button>
+      <span class="count-note" id="entryStatus"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DATABASE ================= -->
+<section class="tab" id="tab-db">
+  <h2>Database</h2>
+  <div class="sub">Every submitted assignment row, live from Supabase.</div>
+  <div class="panel">
+    <div class="bar">
+      <div class="fld"><label>From</label><input type="date" id="dbFrom"></div>
+      <div class="fld"><label>To</label><input type="date" id="dbTo"></div>
+      <div class="fld"><label>DSR</label><select id="dbDsr"><option value="">All</option></select></div>
+      <div class="fld"><label>Tier</label><select id="dbTier"><option value="">All</option><option>A</option><option>B</option><option>C</option></select></div>
+      <div class="fld" style="flex:1;min-width:160px"><label>Search tech / reason / notes</label><input type="text" id="dbSearch"></div>
+      <button class="btn ghost" id="dbReset">Reset</button>
+      <button class="btn ghost" id="dbExport">Export CSV</button>
+    </div>
+    <div class="count-note" id="dbCount" style="margin-bottom:8px"></div>
+    <div class="twrap" style="max-height:62vh"><table id="tblDb"></table></div>
+    <div class="pager">
+      <button class="btn ghost sm" id="dbPrev">‹ Prev</button>
+      <span id="dbPage"></span>
+      <button class="btn ghost sm" id="dbNext">Next ›</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AVAILABILITY ================= -->
+<section class="tab" id="tab-avail">
+  <h2>Availability</h2>
+  <div class="sub">Per-date working status and caps, shared across the team. “Assigned” counts jobs logged for that date; Slots = Max − Assigned.</div>
+  <div class="panel">
+    <div class="bar">
+      <div class="fld"><label>Selected date</label><input type="date" id="availDate"></div>
+      <div class="fld"><label>Region</label><select id="availRegion"><option value="">All</option></select></div>
+      <div class="fld"><label>Show</label><select id="availShow"><option value="">Everyone</option><option value="working">Working today</option><option value="slots">With open slots</option></select></div>
+      <div class="fld" style="flex:1;min-width:150px"><label>Search tech</label><input type="text" id="availSearch"></div>
+    </div>
+    <div class="twrap" style="max-height:62vh"><table id="tblAvail"></table></div>
+  </div>
+</section>
+
+<!-- ================= TECHNICIANS ================= -->
+<section class="tab" id="tab-techs">
+  <h2>Technicians</h2>
+  <div class="sub">The roster the whole app runs on. Priorities come per job type: <b>High End → HE priority</b>, <b>Low End → LE priority</b>. Each technician exists once even if they appear in both priority tabs.</div>
+
+  <div class="panel">
+    <h3 class="pt">Sync priorities from Google Sheet</h3>
+    <div class="sub" style="margin-bottom:10px">Runs automatically on app open (max once per hour). Pulls <b>Priority HE</b> and <b>Priority LE</b>, updates existing technicians and adds new names, deduplicated. Techs removed from a tab lose that tab's priority.</div>
+    <div class="bar tight">
+      <div class="fld" style="flex:1;min-width:280px"><label>Google Sheet URL or ID</label><input type="text" id="syncSheet"></div>
+      <button class="btn" id="syncBtn">Sync now</button>
+      <span class="count-note" id="syncStatus"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="pt">Add technician</h3>
+    <div class="bar tight">
+      <div class="fld" style="min-width:200px"><label>Name</label><input type="text" id="ntName" placeholder="4 LA NewTech"></div>
+      <div class="fld"><label>Tier</label><select id="ntTier"><option value=""></option><option>A</option><option>B</option><option>C</option></select></div>
+      <div class="fld"><label>Region</label><input type="text" id="ntRegion" style="width:130px"></div>
+      <div class="fld"><label>HE priority</label><input type="number" id="ntHe" min="1" style="width:82px"></div>
+      <div class="fld"><label>LE priority</label><input type="number" id="ntLe" min="1" style="width:82px"></div>
+      <button class="btn" id="ntAdd">Add technician</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="bar">
+      <div class="fld"><label>Tier</label><select id="tlTier"><option value="">All</option><option>A</option><option>B</option><option>C</option></select></div>
+      <div class="fld"><label>Region</label><select id="tlRegion"><option value="">All</option></select></div>
+      <div class="fld"><label>Status</label><select id="tlActive"><option value="">All</option><option value="yes" selected>Active</option><option value="no">Inactive</option></select></div>
+      <div class="fld" style="flex:1;min-width:160px"><label>Search</label><input type="text" id="tlSearch"></div>
+      <span class="count-note" id="tlCount"></span>
+    </div>
+    <div class="sub" style="margin-bottom:8px">Edit tier, region, and priorities inline — changes save on the spot. Deactivate instead of deleting to keep history intact.</div>
+    <div class="twrap" style="max-height:56vh"><table id="tblTechs"></table></div>
+  </div>
+</section>
+
+<!-- ================= DISPATCHERS ================= -->
+<section class="tab" id="tab-team">
+  <h2>Dispatchers</h2>
+  <div class="sub">Manage the DSR list that appears in Daily Entry, the Meeting board, and every filter. Renaming a dispatcher also updates their name across all historical records so their stats stay in one place.</div>
+
+  <div class="panel">
+    <h3 class="pt">Add dispatcher</h3>
+    <div class="bar tight">
+      <div class="fld" style="min-width:220px"><label>Name</label><input type="text" id="ndName" placeholder="e.g. Karina"></div>
+      <button class="btn" id="ndAdd">Add dispatcher</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sub" style="margin-bottom:10px"><b>Deactivate</b> hides a dispatcher from dropdowns and the Meeting board but keeps all their history. <b>Delete</b> removes them from the list permanently — their historical assignment rows remain in the Database under their name.</div>
+    <div class="twrap"><table id="tblDsrs"></table></div>
+  </div>
+</section>
+
+</main>
+<footer>Job Efficiency Board · Home Alliance · Supabase-backed · all entries are shared and saved</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const todayStr = () => new Date().toISOString().slice(0,10);
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtPct = v => isFinite(v) ? (v*100).toFixed(1)+'%' : '—';
+const toast = (m,err)=>{ const t=$('#toast'); t.textContent=m; t.className='toast show'+(err?' err':''); setTimeout(()=>t.classList.remove('show'),3200); };
+const jobsOf = r => Number(r.jobs)||0;
+$('#hdrDate').textContent = new Date().toDateString();
+
+/* safe localStorage (some private modes block it) */
+function lsGet(k){ try{return lsGet(k)}catch{return null} }
+function lsSet(k,v){ try{lsSet(k,v)}catch{} }
+function lsDel(k){ try{lsDel(k)}catch{} }
+
+/* ---------------- theme ---------------- */
+const THEME_KEY='djet_theme';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  lsSet(THEME_KEY, t);
+  $('#themeBtn').textContent = t==='dark' ? '☀' : '◐';
+  $('#themeBtn').title = t==='dark' ? 'Switch to light mode' : 'Switch to dark mode';
+}
+const prefersDark = typeof matchMedia==='function' && matchMedia('(prefers-color-scheme: dark)').matches;
+applyTheme(lsGet(THEME_KEY) || (prefersDark ? 'dark' : 'light'));
+$('#themeBtn').addEventListener('click', ()=>applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'));
+
+/* ---------------- supabase config ---------------- */
+const CFG_KEY='djet_supabase_cfg';
+let sb=null, TECHS=[], TECH_MAP={}, DSR_ROWS=[], REASONS=[], REGIONS=[];
+const DSRS = () => DSR_ROWS.filter(d=>d.active!==false).map(d=>d.name);
+
+function getCfg(){ try{return JSON.parse(lsGet(CFG_KEY))}catch{return null} }
+
+async function connect(url,key){
+  try{ const u=new URL(url.trim()); url=u.origin; }catch{ url=url.trim().replace(/\/+$/,''); }
+  $('#cfgStatus').textContent='Connecting…';
+  try{
+    const client = window.supabase.createClient(url,key);
+    const [{data:techs,error:e1},{data:dsrs,error:e2},{data:reasons,error:e3}] = await Promise.all([
+      client.from('technicians').select('*').order('name'),
+      client.from('dsrs').select('*').order('name'),
+      client.from('reasons').select('label').eq('active',true)
+    ]);
+    if(e1||e2||e3) throw (e1||e2||e3);
+    sb=client;
+    TECHS=techs||[]; TECH_MAP={}; TECHS.forEach(t=>TECH_MAP[t.name]=t);
+    DSR_ROWS=dsrs||[];
+    REASONS=(reasons||[]).map(r=>r.label);
+    REGIONS=[...new Set(TECHS.map(t=>t.region).filter(Boolean))].sort();
+    lsSet(CFG_KEY, JSON.stringify({url,key}));
+    bootUI();
+    return true;
+  }catch(err){
+    $('#cfgStatus').textContent = 'Could not connect: '+(err.message||err);
+    $('#connDot').classList.add('off');
+    return false;
+  }
+}
+$('#cfgSave').addEventListener('click', ()=>connect($('#cfgUrl').value.trim(), $('#cfgKey').value.trim()));
+$('#reconfig').addEventListener('click', ()=>{ lsDel(CFG_KEY); location.reload(); });
+
+/* ---------------- UI boot ---------------- */
+function fillSelect(sel, items, keepFirst){
+  const first = keepFirst && sel.firstElementChild ? sel.firstElementChild.outerHTML : '';
+  sel.innerHTML = first + items.map(i=>`<option>${esc(i)}</option>`).join('');
+}
+function refreshDsrSelects(){
+  fillSelect($('#dashDsr'), DSRS(), true);
+  fillSelect($('#dbDsr'), DSRS(), true);
+  fillSelect($('#entryDsr'), DSRS(), false);
+  $$('#entryRows .e-dsr').forEach(s=>{
+    const cur=s.value;
+    s.innerHTML=DSRS().map(d=>`<option${d===cur?' selected':''}>${esc(d)}</option>`).join('');
+  });
+}
+function bootUI(){
+  $('#setup').style.display='none';
+  $('#nav').style.display='flex';
+  $('#reconfig').style.display='inline-block';
+  $('#connDot').classList.remove('off');
+  refreshDsrSelects();
+  fillSelect($('#availRegion'), REGIONS, true);
+  fillSelect($('#tlRegion'), REGIONS, true);
+  $('#meetDate').value = todayStr();
+  $('#entryDate').value = todayStr();
+  $('#availDate').value = todayStr();
+  showTab('meet');
+  subscribeRealtime();
+  autoSyncIfStale();
+}
+
+/* ---------------- nav ---------------- */
+function showTab(name){
+  $$('#nav button').forEach(x=>x.classList.toggle('on', x.dataset.tab===name));
+  $$('.tab').forEach(t=>t.classList.toggle('on', t.id==='tab-'+name));
+  if(name==='meet') renderMeet();
+  if(name==='dash') renderDash();
+  if(name==='entry' && !$$('#entryRows .entry-row').length){ addEntryRow(); addEntryRow(); addEntryRow(); }
+  if(name==='db') renderDb();
+  if(name==='avail') renderAvail();
+  if(name==='techs') renderTechs();
+  if(name==='team') renderDsrs();
+}
+$('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.tab); });
+
+/* ---------------- realtime ---------------- */
+function subscribeRealtime(){
+  try{
+    sb.channel('assignments-live')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'assignments'},()=>{
+        if($('#tab-meet').classList.contains('on')) renderMeet();
+      }).subscribe();
+  }catch(e){}
+}
+
+/* ---------------- tech info ---------------- */
+const activeTechs = () => TECHS.filter(t=>t.active!==false);
+function techInfo(name, jobType){
+  const t = TECH_MAP[name] || {};
+  let priority='', region=t.region||'';
+  if(jobType==='High End'){ priority=t.he_priority??''; region=t.he_region||region; }
+  else if(jobType==='Low End'){ priority=t.le_priority??''; region=t.le_region||region; }
+  else { priority = t.he_priority ?? t.le_priority ?? ''; }
+  return { tier:t.tier||'', region, priority: priority===null?'':priority };
+}
+const prioBadge = p => { const n=parseFloat(p); return isFinite(n)?`<span class="badge ${n<=1?'P1':n<=2?'P2':'Pn'}">${n}</span>`:''; };
+const tierBadge = t => t?`<span class="badge ${esc(t)}">${esc(t)}</span>`:'';
+
+/* ================= MEETING ================= */
+async function renderMeet(){
+  const date = $('#meetDate').value || todayStr();
+  $('#meetGrid').innerHTML='<div class="loading">Loading…</div>';
+  const {data:rows,error} = await sb.from('assignments').select('*').eq('date',date).order('submitted_at');
+  if(error){ toast('Load failed: '+error.message,true); $('#meetGrid').innerHTML=''; return; }
+  const total=rows.reduce((s,r)=>s+jobsOf(r),0);
+  const byTier=t=>rows.filter(r=>r.tier===t).reduce((s,r)=>s+jobsOf(r),0);
+  const a=byTier('A'),b=byTier('B'),c=byTier('C');
+  const warns=rows.filter(r=>r.warning).length;
+  $('#meetKpis').innerHTML=`
+    <div class="kpi"><div class="v">${total}</div><div class="l">Jobs assigned</div></div>
+    <div class="kpi a"><div class="v">${a}</div><div class="l">To A-techs</div></div>
+    <div class="kpi b"><div class="v">${b}</div><div class="l">To B-techs</div></div>
+    <div class="kpi c"><div class="v">${c}</div><div class="l">To C-techs</div></div>
+    <div class="kpi"><div class="v">${fmtPct(total?a/total:NaN)}</div><div class="l">% to A players</div></div>
+    <div class="kpi ${warns?'b':''}"><div class="v">${warns}</div><div class="l">Flagged rows</div></div>`;
+  $('#meetNote').textContent=`${rows.length} entries on ${date}`;
+  $('#meetGrid').innerHTML = DSRS().map(d=>{
+    const rr=rows.filter(r=>r.dsr===d);
+    const tt=rr.reduce((s,r)=>s+jobsOf(r),0);
+    const ta=rr.filter(r=>r.tier==='A').reduce((s,r)=>s+jobsOf(r),0);
+    const body = rr.length? rr.map(r=>{
+      const reason=r.reason||r.notes;
+      return `<div class="meet-line">
+        <div><b>${esc(r.technician)}</b> ${r.job_type?`<span class="badge gray">${esc(r.job_type)}</span>`:''}</div>
+        <div>${tierBadge(r.tier)}</div><div>${prioBadge(r.priority)}</div>
+        <div style="font-family:var(--mono);font-size:12px">${jobsOf(r)} job${jobsOf(r)===1?'':'s'}</div>
+        ${reason?`<div class="rsn ${r.warning?'w':''}">${esc(reason)}${r.warning?' · ⚠ '+esc(r.warning):''}</div>`:(r.warning?`<div class="rsn w">⚠ ${esc(r.warning)} — no reason given</div>`:'')}
+      </div>`;
+    }).join('') : `<div class="meet-empty">No entries yet for ${date}.</div>`;
+    return `<div class="meet-card">
+      <div class="mc-head"><span class="mc-name">${esc(d)}</span>
+        <span class="mc-stats">${tt} jobs · ${fmtPct(tt?ta/tt:NaN)} to A</span></div>
+      <div class="mc-body">${body}</div></div>`;
+  }).join('');
+}
+$('#meetDate').addEventListener('change',renderMeet);
+$('#meetRefresh').addEventListener('click',renderMeet);
+
+/* ================= DASHBOARD ================= */
+function dashRange(){
+  const p=$('#dashPreset').value, t=todayStr();
+  if(p==='today') return [t,t];
+  if(p==='custom') return [$('#dashFrom').value||'2000-01-01', $('#dashTo').value||t];
+  const d=new Date(); d.setDate(d.getDate()-(+p)+1);
+  return [d.toISOString().slice(0,10), t];
+}
+async function renderDash(){
+  const [from,to]=dashRange(); const dsr=$('#dashDsr').value;
+  $('#dashRangeNote').textContent='Loading…';
+  let q=sb.from('assignments').select('date,dsr,tier,priority,region,jobs').gte('date',from).lte('date',to).limit(20000);
+  if(dsr) q=q.eq('dsr',dsr);
+  const {data:rows,error}=await q;
+  if(error){ toast('Load failed: '+error.message,true); return; }
+  const total=rows.reduce((s,r)=>s+jobsOf(r),0);
+  const byTier=t=>rows.filter(r=>r.tier===t).reduce((s,r)=>s+jobsOf(r),0);
+  const a=byTier('A'),b=byTier('B'),c=byTier('C');
+  $('#dashRangeNote').textContent=`Data from ${from} → ${to}${dsr?' · '+dsr:''} · ${rows.length} rows`;
+  $('#dashKpis').innerHTML=`
+    <div class="kpi"><div class="v">${total}</div><div class="l">Total jobs</div></div>
+    <div class="kpi a"><div class="v">${a}</div><div class="l">A-tech jobs</div></div>
+    <div class="kpi b"><div class="v">${b}</div><div class="l">B-tech jobs</div></div>
+    <div class="kpi c"><div class="v">${c}</div><div class="l">C-tech jobs</div></div>
+    <div class="kpi"><div class="v">${fmtPct(total?a/total:NaN)}</div><div class="l">% to A players</div></div>`;
+
+  let h=`<thead><tr><th>DSR</th><th>A</th><th>B</th><th>C</th><th>Total</th><th>A usage</th></tr></thead><tbody>`;
+  DSRS().forEach(d=>{
+    const rr=rows.filter(r=>r.dsr===d);
+    const tt=rr.reduce((s,r)=>s+jobsOf(r),0);
+    const f=t=>rr.filter(r=>r.tier===t).reduce((s,r)=>s+jobsOf(r),0);
+    h+=`<tr><td>${esc(d)}</td><td class="num">${f('A')}</td><td class="num">${f('B')}</td><td class="num">${f('C')}</td><td class="num"><b>${tt}</b></td><td class="num">${fmtPct(tt?f('A')/tt:NaN)}</td></tr>`;
+  });
+  $('#tblTier').innerHTML=h+'</tbody>';
+
+  h=`<thead><tr><th>DSR</th><th>P1</th><th>P2</th><th>P3+</th><th>Total</th><th>Avg prio</th><th>Top prio %</th></tr></thead><tbody>`;
+  DSRS().forEach(d=>{
+    const rr=rows.filter(r=>r.dsr===d);
+    const tt=rr.reduce((s,r)=>s+jobsOf(r),0);
+    let p1=0,p2=0,p3=0,psum=0,pj=0;
+    rr.forEach(r=>{const p=parseFloat(r.priority); if(!isFinite(p))return; const j=jobsOf(r);
+      psum+=p*j; pj+=j; if(p<=1)p1+=j; else if(p<=2)p2+=j; else p3+=j;});
+    h+=`<tr><td>${esc(d)}</td><td class="num">${p1}</td><td class="num">${p2}</td><td class="num">${p3}</td><td class="num"><b>${tt}</b></td><td class="num">${pj?(psum/pj).toFixed(2):'—'}</td><td class="num">${fmtPct(tt?p1/tt:NaN)}</td></tr>`;
+  });
+  $('#tblPrio').innerHTML=h+'</tbody>';
+
+  const byRegion={}; rows.forEach(r=>{if(r.region)byRegion[r.region]=(byRegion[r.region]||0)+jobsOf(r)});
+  const regs=Object.entries(byRegion).sort((x,y)=>y[1]-x[1]).slice(0,14);
+  const rmax=Math.max(1,...regs.map(x=>x[1]));
+  $('#regionBars').innerHTML=regs.map(([k,v])=>`<div class="bar-row"><div class="lbl" title="${esc(k)}">${esc(k)}</div><div class="trk"><div class="fill" style="width:${v/rmax*100}%"></div></div><div class="val">${v}</div></div>`).join('')||'<div class="sub">No data in range.</div>';
+
+  const byDay={}; rows.forEach(r=>{if(r.date)byDay[r.date]=(byDay[r.date]||0)+jobsOf(r)});
+  const days=Object.entries(byDay).sort().slice(-21);
+  const dmax=Math.max(1,...days.map(x=>x[1]));
+  $('#dayBars').innerHTML=days.map(([k,v])=>`<div class="bar-row"><div class="lbl">${k}</div><div class="trk"><div class="fill alt" style="width:${v/dmax*100}%"></div></div><div class="val">${v}</div></div>`).join('')||'<div class="sub">No data in range.</div>';
+}
+['dashPreset','dashFrom','dashTo','dashDsr'].forEach(id=>$('#'+id).addEventListener('change',()=>{
+  if(id==='dashFrom'||id==='dashTo')$('#dashPreset').value='custom';
+  renderDash();
+}));
+
+/* ================= DAILY ENTRY ================= */
+function addEntryRow(){
+  const wrap=$('#entryRows');
+  const row=document.createElement('div');
+  row.className='entry-row';
+  const techOpts='<option value=""></option>'+activeTechs().map(t=>`<option>${esc(t.name)}</option>`).join('');
+  const reasonOpts='<option value=""></option>'+REASONS.map(r=>`<option>${esc(r)}</option>`).join('');
+  row.innerHTML=`
+    <input type="date" class="e-date" value="${$('#entryDate').value||todayStr()}">
+    <select class="e-dsr">${DSRS().map(d=>`<option${d===$('#entryDsr').value?' selected':''}>${esc(d)}</option>`).join('')}</select>
+    <select class="e-type"><option value=""></option><option>High End</option><option>Low End</option></select>
+    <select class="e-tech">${techOpts}</select>
+    <div class="auto-cell e-tier">—</div>
+    <div class="auto-cell e-prio">—</div>
+    <div class="auto-cell e-region">—</div>
+    <input type="number" class="e-jobs" min="1" value="1">
+    <select class="e-reason">${reasonOpts}</select>
+    <input type="text" class="e-notes" placeholder="Optional">
+    <button class="rm" title="Remove row">×</button>
+    <div class="entry-warn e-warn" style="display:none"></div>`;
+  wrap.appendChild(row);
+  const upd=()=>{
+    const info=techInfo(row.querySelector('.e-tech').value,row.querySelector('.e-type').value);
+    row.querySelector('.e-tier').textContent=info.tier||'—';
+    row.querySelector('.e-prio').textContent=info.priority!==''?info.priority:'—';
+    row.querySelector('.e-region').textContent=info.region||'—';
+    checkWarn(row);
+  };
+  row.querySelector('.e-tech').addEventListener('change',upd);
+  row.querySelector('.e-type').addEventListener('change',upd);
+  row.querySelector('.e-reason').addEventListener('change',()=>checkWarn(row));
+  row.querySelector('.rm').addEventListener('click',()=>row.remove());
+}
+function checkWarn(row){
+  const tier=row.querySelector('.e-tier').textContent;
+  const prio=parseFloat(row.querySelector('.e-prio').textContent);
+  const reason=row.querySelector('.e-reason').value;
+  const msgs=[];
+  if((tier==='B'||tier==='C')&&!reason)msgs.push('Non-A tech selected — pick a reason.');
+  if(isFinite(prio)&&prio>1&&!reason)msgs.push('Tech is not top priority for this region — pick a reason.');
+  const w=row.querySelector('.e-warn');
+  w.textContent=msgs.join(' ');
+  w.style.display=msgs.length?'flex':'none';
+  return msgs.join(' ');
+}
+$('#addRow').addEventListener('click',addEntryRow);
+$('#entryDate').addEventListener('change',()=>$$('#entryRows .e-date').forEach(i=>i.value=$('#entryDate').value));
+$('#entryDsr').addEventListener('change',()=>$$('#entryRows .e-dsr').forEach(s=>s.value=$('#entryDsr').value));
+
+$('#submitEntries').addEventListener('click', async ()=>{
+  const rows=$$('#entryRows .entry-row');
+  const payload=[]; let skipped=0;
+  rows.forEach(row=>{
+    const g=c=>row.querySelector(c).value;
+    if(!g('.e-tech')){ if(g('.e-notes')||g('.e-reason'))skipped++; return; }
+    const info=techInfo(g('.e-tech'),g('.e-type'));
+    payload.push({
+      date:g('.e-date')||todayStr(), dsr:g('.e-dsr'), job_type:g('.e-type')||null,
+      technician:g('.e-tech'), tier:info.tier||null,
+      priority:info.priority===''?null:Number(info.priority), region:info.region||null,
+      jobs:Number(g('.e-jobs'))||1, reason:g('.e-reason')||null, notes:g('.e-notes')||null,
+      warning:checkWarn(row)||null, _row:row
+    });
+  });
+  if(!payload.length){ $('#entryStatus').textContent='Nothing to submit — pick a technician.'; return; }
+  $('#submitEntries').disabled=true;
+  const clean=payload.map(({_row,...r})=>r);
+  const {error}=await sb.from('assignments').insert(clean);
+  $('#submitEntries').disabled=false;
+  if(error){ toast('Save failed: '+error.message,true); return; }
+  payload.forEach(p=>p._row.remove());
+  $('#entryStatus').textContent=`${payload.length} row(s) saved${skipped?', '+skipped+' incomplete row(s) kept':''}.`;
+  toast(`${payload.length} row(s) saved to the shared database`);
+  if(!$$('#entryRows .entry-row').length) addEntryRow();
+});
+
+/* ================= DATABASE ================= */
+let dbPage=0, dbSort={key:'date',dir:false};
+const PAGE=50;
+function dbQuery(sel){
+  let q=sb.from('assignments').select(sel,{count:'exact'});
+  const f=$('#dbFrom').value,t=$('#dbTo').value,d=$('#dbDsr').value,ti=$('#dbTier').value,s=$('#dbSearch').value.trim();
+  if(f)q=q.gte('date',f); if(t)q=q.lte('date',t);
+  if(d)q=q.eq('dsr',d); if(ti)q=q.eq('tier',ti);
+  if(s)q=q.or(`technician.ilike.%${s}%,reason.ilike.%${s}%,notes.ilike.%${s}%,region.ilike.%${s}%`);
+  return q;
+}
+async function renderDb(){
+  $('#tblDb').innerHTML='<tbody><tr><td class="loading">Loading…</td></tr></tbody>';
+  const {data:rows,count,error}=await dbQuery('*')
+    .order(dbSort.key,{ascending:dbSort.dir})
+    .order('submitted_at',{ascending:false})
+    .range(dbPage*PAGE,dbPage*PAGE+PAGE-1);
+  if(error){ toast('Load failed: '+error.message,true); return; }
+  const pages=Math.max(1,Math.ceil((count||0)/PAGE));
+  $('#dbCount').textContent=`${count||0} rows in current filter`;
+  const arrow=k=>dbSort.key===k?(dbSort.dir?' ↑':' ↓'):'';
+  const cols=[['date','Date'],['dsr','DSR'],['job_type','Type'],['technician','Technician'],['tier','Tier'],['priority','Prio'],['region','Region'],['jobs','Jobs'],['reason','Reason'],['notes','Notes'],['warning','Warning'],['justified','Justified'],['submitted_at','Submitted']];
+  let h='<thead><tr>'+cols.map(([k,l])=>`<th class="sortable" data-k="${k}">${l}${arrow(k)}</th>`).join('')+'<th></th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    h+=`<tr>
+      <td class="num" style="text-align:left">${esc(r.date)}</td>
+      <td>${esc(r.dsr)}</td><td>${esc(r.job_type||'')}</td><td>${esc(r.technician)}</td>
+      <td>${tierBadge(r.tier)}</td><td>${prioBadge(r.priority)}</td>
+      <td>${esc(r.region||'')}</td><td class="num">${esc(r.jobs)}</td>
+      <td style="max-width:220px">${esc(r.reason||'')}</td><td style="max-width:220px">${esc(r.notes||'')}</td>
+      <td class="warn-txt" style="max-width:180px">${esc(r.warning||'')}</td>
+      <td>${r.justified?`<span class="badge ${r.justified==='Yes'?'yes':'no'}">${esc(r.justified)}</span>`:''}</td>
+      <td class="num" style="text-align:left;font-size:11px">${esc((r.submitted_at||'').replace('T',' ').slice(0,16))}</td>
+      <td><button class="btn danger sm" data-del="${esc(r.id)}">Del</button></td></tr>`;
+  });
+  $('#tblDb').innerHTML=h+'</tbody>';
+  $('#dbPage').textContent=`Page ${dbPage+1} / ${pages}`;
+}
+$('#tblDb').addEventListener('click', async e=>{
+  const th=e.target.closest('th.sortable');
+  if(th){ const k=th.dataset.k; dbSort=dbSort.key===k?{key:k,dir:!dbSort.dir}:{key:k,dir:true}; renderDb(); return; }
+  const del=e.target.closest('[data-del]');
+  if(del&&confirm('Delete this row for everyone? This cannot be undone.')){
+    const {error}=await sb.from('assignments').delete().eq('id',del.dataset.del);
+    if(error){toast('Delete failed: '+error.message,true);return;}
+    toast('Row deleted'); renderDb();
+  }
+});
+['dbFrom','dbTo','dbDsr','dbTier'].forEach(id=>$('#'+id).addEventListener('change',()=>{dbPage=0;renderDb()}));
+let searchT; $('#dbSearch').addEventListener('input',()=>{clearTimeout(searchT);searchT=setTimeout(()=>{dbPage=0;renderDb()},350)});
+$('#dbReset').addEventListener('click',()=>{['dbFrom','dbTo','dbDsr','dbTier','dbSearch'].forEach(id=>$('#'+id).value='');dbPage=0;renderDb();});
+$('#dbPrev').addEventListener('click',()=>{if(dbPage>0){dbPage--;renderDb()}});
+$('#dbNext').addEventListener('click',()=>{dbPage++;renderDb()});
+$('#dbExport').addEventListener('click', async ()=>{
+  const {data:rows,error}=await dbQuery('*').order('date',{ascending:true}).limit(20000);
+  if(error){toast('Export failed: '+error.message,true);return;}
+  const head=['date','dsr','job_type','technician','tier','priority','region','jobs','reason','notes','warning','justified','submitted_at'];
+  const cell=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const csv=[head.join(',')].concat(rows.map(r=>head.map(k=>cell(r[k])).join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='assignments_export.csv'; a.click();
+});
+
+/* ================= AVAILABILITY ================= */
+async function renderAvail(){
+  const date=$('#availDate').value||todayStr();
+  $('#tblAvail').innerHTML='<tbody><tr><td class="loading">Loading…</td></tr></tbody>';
+  const [{data:av,error:e1},{data:asg,error:e2}]=await Promise.all([
+    sb.from('availability').select('*').eq('date',date),
+    sb.from('assignments').select('technician,jobs').eq('date',date)
+  ]);
+  if(e1||e2){toast('Load failed: '+((e1||e2).message),true);return;}
+  const avMap={}; (av||[]).forEach(a=>avMap[a.technician]=a);
+  const assigned={}; (asg||[]).forEach(r=>assigned[r.technician]=(assigned[r.technician]||0)+jobsOf(r));
+  const rg=$('#availRegion').value, show=$('#availShow').value, q=$('#availSearch').value.toLowerCase();
+  let h='<thead><tr><th>Technician</th><th>Tier</th><th>Region</th><th>Working today</th><th>Max jobs/day</th><th>Assigned</th><th>Slots</th><th>DSR</th><th>Notes</th></tr></thead><tbody>';
+  activeTechs().filter(t=>(!rg||t.region===rg)&&(!q||t.name.toLowerCase().includes(q))).forEach(t=>{
+    const st=avMap[t.name]||{};
+    const asgn=assigned[t.name]||0;
+    const max=st.max_jobs==null?null:Number(st.max_jobs);
+    const slots=(st.working==='Yes'&&max!=null)?Math.max(0,max-asgn):0;
+    if(show==='working'&&st.working!=='Yes')return;
+    if(show==='slots'&&slots<=0)return;
+    h+=`<tr>
+      <td>${esc(t.name)}</td><td>${tierBadge(t.tier)}</td><td>${esc(t.region||'')}</td>
+      <td><select data-av="working" data-t="${esc(t.name)}"><option value=""></option><option${st.working==='Yes'?' selected':''}>Yes</option><option${st.working==='No'?' selected':''}>No</option></select></td>
+      <td><input type="number" min="0" style="width:70px" data-av="max_jobs" data-t="${esc(t.name)}" value="${st.max_jobs??''}"></td>
+      <td class="num">${asgn}</td>
+      <td class="num"><b style="color:${slots>0?'var(--green)':'var(--ink-3)'}">${slots}</b></td>
+      <td><input type="text" style="width:90px" data-av="dsr" data-t="${esc(t.name)}" value="${esc(st.dsr||'')}"></td>
+      <td><input type="text" style="width:140px" data-av="notes" data-t="${esc(t.name)}" value="${esc(st.notes||'')}"></td></tr>`;
+  });
+  $('#tblAvail').innerHTML=h+'</tbody>';
+}
+$('#tblAvail').addEventListener('change', async e=>{
+  const el=e.target.closest('[data-av]'); if(!el)return;
+  const date=$('#availDate').value||todayStr();
+  const row=el.closest('tr');
+  const get=k=>{const n=row.querySelector(`[data-av="${k}"]`);return n?n.value:null;};
+  const rec={date, technician:el.dataset.t, working:get('working')||null,
+    max_jobs:get('max_jobs')===''?null:Number(get('max_jobs')), dsr:get('dsr')||null, notes:get('notes')||null,
+    updated_at:new Date().toISOString()};
+  const {error}=await sb.from('availability').upsert(rec);
+  if(error){toast('Save failed: '+error.message,true);return;}
+  renderAvail();
+});
+['availDate','availRegion','availShow'].forEach(id=>$('#'+id).addEventListener('change',renderAvail));
+let avT; $('#availSearch').addEventListener('input',()=>{clearTimeout(avT);avT=setTimeout(renderAvail,300)});
+
+/* ================= TECHNICIANS ================= */
+async function reloadTechs(){
+  const {data,error}=await sb.from('technicians').select('*').order('name');
+  if(error){toast('Reload failed: '+error.message,true);return;}
+  TECHS=data||[]; TECH_MAP={}; TECHS.forEach(t=>TECH_MAP[t.name]=t);
+  REGIONS=[...new Set(TECHS.map(t=>t.region).filter(Boolean))].sort();
+  fillSelect($('#availRegion'), REGIONS, true);
+  fillSelect($('#tlRegion'), REGIONS, true);
+  $$('#entryRows .entry-row').forEach(r=>r.remove());
+}
+function renderTechs(){
+  const ti=$('#tlTier').value,rg=$('#tlRegion').value,ac=$('#tlActive').value,q=$('#tlSearch').value.toLowerCase();
+  const rows=TECHS.filter(t=>
+    (!ti||t.tier===ti)&&(!rg||t.region===rg)&&(!q||t.name.toLowerCase().includes(q))&&
+    (ac===''||(ac==='yes'?t.active!==false:t.active===false)));
+  $('#tlCount').textContent=`${rows.length} shown / ${TECHS.length} total (${activeTechs().length} active)`;
+  const tierSel=(t)=>`<select data-tf="tier" data-t="${esc(t.name)}"><option value=""></option>${['A','B','C'].map(x=>`<option${t.tier===x?' selected':''}>${x}</option>`).join('')}</select>`;
+  let h='<thead><tr><th>Technician</th><th>Tier</th><th>Region</th><th>HE priority</th><th>HE region</th><th>LE priority</th><th>LE region</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(t=>{
+    const off=t.active===false;
+    h+=`<tr style="${off?'opacity:.55':''}">
+      <td><b>${esc(t.name)}</b></td>
+      <td>${tierSel(t)}</td>
+      <td><input type="text" style="width:120px" data-tf="region" data-t="${esc(t.name)}" value="${esc(t.region||'')}"></td>
+      <td><input type="number" min="1" style="width:64px" data-tf="he_priority" data-t="${esc(t.name)}" value="${t.he_priority??''}"></td>
+      <td><input type="text" style="width:110px" data-tf="he_region" data-t="${esc(t.name)}" value="${esc(t.he_region||'')}"></td>
+      <td><input type="number" min="1" style="width:64px" data-tf="le_priority" data-t="${esc(t.name)}" value="${t.le_priority??''}"></td>
+      <td><input type="text" style="width:110px" data-tf="le_region" data-t="${esc(t.name)}" value="${esc(t.le_region||'')}"></td>
+      <td><button class="btn ghost sm" data-toggle="${esc(t.name)}">${off?'Activate':'Deactivate'}</button></td></tr>`;
+  });
+  $('#tblTechs').innerHTML=h+'</tbody>'+(rows.length?'':'<tbody><tr><td colspan="8" style="color:var(--ink-2)">No technicians match.</td></tr></tbody>');
+}
+['tlTier','tlRegion','tlActive'].forEach(id=>$('#'+id).addEventListener('change',renderTechs));
+$('#tlSearch').addEventListener('input',renderTechs);
+
+$('#tblTechs').addEventListener('change', async e=>{
+  const el=e.target.closest('[data-tf]'); if(!el)return;
+  const field=el.dataset.tf, name=el.dataset.t;
+  let val=el.value;
+  if(field==='he_priority'||field==='le_priority') val=val===''?null:Number(val);
+  else val=val||null;
+  const {error}=await sb.from('technicians').update({[field]:val}).eq('name',name);
+  if(error){toast('Save failed: '+error.message,true);return;}
+  const t=TECH_MAP[name]; if(t)t[field]=val;
+  toast(`${name} updated`);
+});
+$('#tblTechs').addEventListener('click', async e=>{
+  const b=e.target.closest('[data-toggle]'); if(!b)return;
+  const name=b.dataset.toggle, t=TECH_MAP[name];
+  const next = t.active===false;
+  const {error}=await sb.from('technicians').update({active:next}).eq('name',name);
+  if(error){toast('Save failed: '+error.message,true);return;}
+  t.active=next;
+  renderTechs();
+  toast(`${name} ${next?'activated':'deactivated'}`);
+});
+$('#ntAdd').addEventListener('click', async ()=>{
+  const name=$('#ntName').value.trim();
+  if(!name){toast('Enter a technician name',true);return;}
+  if(TECH_MAP[name]){toast('That technician already exists',true);return;}
+  const rec={name, tier:$('#ntTier').value||null, region:$('#ntRegion').value.trim()||null,
+    he_priority:$('#ntHe').value===''?null:Number($('#ntHe').value),
+    le_priority:$('#ntLe').value===''?null:Number($('#ntLe').value), active:true};
+  const {error}=await sb.from('technicians').insert(rec);
+  if(error){toast('Add failed: '+error.message,true);return;}
+  ['ntName','ntRegion','ntHe','ntLe'].forEach(id=>$('#'+id).value=''); $('#ntTier').value='';
+  await reloadTechs(); renderTechs(); toast(`${name} added`);
+});
+
+/* ================= DISPATCHERS ================= */
+async function reloadDsrs(){
+  const {data,error}=await sb.from('dsrs').select('*').order('name');
+  if(error){toast('Reload failed: '+error.message,true);return;}
+  DSR_ROWS=data||[];
+  refreshDsrSelects();
+}
+function renderDsrs(){
+  let h='<thead><tr><th>Dispatcher</th><th>Status</th><th style="width:340px">Actions</th></tr></thead><tbody>';
+  DSR_ROWS.forEach(d=>{
+    const off=d.active===false;
+    h+=`<tr style="${off?'opacity:.55':''}">
+      <td><input type="text" style="width:200px;font-weight:600" data-dsr-name="${esc(d.name)}" value="${esc(d.name)}"></td>
+      <td>${off?'<span class="badge gray">Inactive</span>':'<span class="badge yes">Active</span>'}</td>
+      <td style="display:flex;gap:8px">
+        <button class="btn ghost sm" data-dsr-rename="${esc(d.name)}">Rename</button>
+        <button class="btn ghost sm" data-dsr-toggle="${esc(d.name)}">${off?'Activate':'Deactivate'}</button>
+        <button class="btn danger sm" data-dsr-del="${esc(d.name)}">Delete</button>
+      </td></tr>`;
+  });
+  $('#tblDsrs').innerHTML=h+'</tbody>'+(DSR_ROWS.length?'':'<tbody><tr><td colspan="3" style="color:var(--ink-2)">No dispatchers yet — add one above.</td></tr></tbody>');
+}
+$('#ndAdd').addEventListener('click', async ()=>{
+  const name=$('#ndName').value.trim();
+  if(!name){toast('Enter a dispatcher name',true);return;}
+  if(DSR_ROWS.some(d=>d.name.toLowerCase()===name.toLowerCase())){toast('That dispatcher already exists',true);return;}
+  const {error}=await sb.from('dsrs').insert({name, active:true});
+  if(error){toast('Add failed: '+error.message,true);return;}
+  $('#ndName').value='';
+  await reloadDsrs(); renderDsrs(); toast(`${name} added`);
+});
+$('#tblDsrs').addEventListener('click', async e=>{
+  const ren=e.target.closest('[data-dsr-rename]');
+  if(ren){
+    const oldName=ren.dataset.dsrRename;
+    const input=$(`#tblDsrs input[data-dsr-name="${CSS.escape(oldName)}"]`);
+    const newName=input.value.trim();
+    if(!newName||newName===oldName){toast('Type the new name in the field first',true);return;}
+    if(DSR_ROWS.some(d=>d.name.toLowerCase()===newName.toLowerCase())){toast('A dispatcher with that name already exists',true);return;}
+    if(!confirm(`Rename "${oldName}" to "${newName}"?\nThis also updates the name on all their historical records.`))return;
+    let r=await sb.from('dsrs').update({name:newName}).eq('name',oldName);
+    if(r.error){toast('Rename failed: '+r.error.message,true);return;}
+    r=await sb.from('assignments').update({dsr:newName}).eq('dsr',oldName);
+    if(r.error){toast('Renamed in list, but history update failed: '+r.error.message,true);}
+    await reloadDsrs(); renderDsrs(); toast(`Renamed to ${newName}`);
+    return;
+  }
+  const tog=e.target.closest('[data-dsr-toggle]');
+  if(tog){
+    const name=tog.dataset.dsrToggle;
+    const d=DSR_ROWS.find(x=>x.name===name);
+    const next=d.active===false;
+    const {error}=await sb.from('dsrs').update({active:next}).eq('name',name);
+    if(error){toast('Save failed: '+error.message,true);return;}
+    await reloadDsrs(); renderDsrs();
+    toast(`${name} ${next?'activated':'deactivated'}`);
+    return;
+  }
+  const del=e.target.closest('[data-dsr-del]');
+  if(del){
+    const name=del.dataset.dsrDel;
+    if(!confirm(`Delete dispatcher "${name}" from the list?\nTheir historical rows stay in the Database, but they disappear from dropdowns and the Meeting board.\n\nTip: Deactivate is usually the safer choice.`))return;
+    const {error}=await sb.from('dsrs').delete().eq('name',name);
+    if(error){toast('Delete failed: '+error.message,true);return;}
+    await reloadDsrs(); renderDsrs(); toast(`${name} deleted`);
+  }
+});
+
+/* ================= PRIORITY SYNC ================= */
+const SYNC_KEY='djet_priority_sheet';
+const SYNC_TS_KEY='djet_priority_synced_at';
+const SYNC_MAX_AGE = 60*60*1000;
+const DEFAULT_SHEET='1Q72yfQYqZKMGL4UOViRVmk7uS9-MDT-GFtUcjSQuqWA';
+$('#syncSheet').value = lsGet(SYNC_KEY) || DEFAULT_SHEET;
+
+function markSynced(){ lsSet(SYNC_TS_KEY, Date.now()); updateSyncBadge(); }
+function updateSyncBadge(){
+  const ts=Number(lsGet(SYNC_TS_KEY));
+  const el=$('#syncBadge');
+  if(!ts){ el.textContent=''; return; }
+  const mins=Math.round((Date.now()-ts)/60000);
+  el.textContent='priorities synced '+(mins<1?'just now':mins<60?mins+'m ago':Math.round(mins/60)+'h ago');
+}
+setInterval(updateSyncBadge, 60000);
+
+function parseCsv(text){
+  const rows=[]; let row=[],cell='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){ if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else inQ=false; } else cell+=ch; }
+    else if(ch==='"') inQ=true;
+    else if(ch===','){row.push(cell);cell='';}
+    else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
+    else if(ch!=='\r') cell+=ch;
+  }
+  if(cell!==''||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+async function fetchTab(sheetId, tabName){
+  const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const res=await fetch(url);
+  if(!res.ok) throw new Error(`Could not fetch "${tabName}" (HTTP ${res.status}). Check the sheet is shared: Anyone with the link → Viewer.`);
+  const rows=parseCsv(await res.text());
+  const out={};
+  rows.slice(1).forEach(r=>{
+    const name=(r[0]||'').trim();
+    if(!name)return;
+    const region=(r[1]||'').trim();
+    const p=parseFloat(r[2]);
+    out[name]={region, priority:isFinite(p)?p:null};
+  });
+  return out;
+}
+async function syncPriorities({silent=false}={}){
+  const raw=$('#syncSheet').value.trim();
+  const idMatch=raw.match(/[-\w]{25,}/);
+  if(!idMatch){ if(!silent)toast('Paste a valid Google Sheet URL or ID',true); return false; }
+  const sheetId=idMatch[0];
+  lsSet(SYNC_KEY, sheetId);
+  const st=$('#syncStatus'); const btn=$('#syncBtn');
+  btn.disabled=true; if(!silent) st.textContent='Fetching Priority HE + Priority LE…';
+  try{
+    const [he,le]=await Promise.all([fetchTab(sheetId,'Priority HE'), fetchTab(sheetId,'Priority LE')]);
+    const names=[...new Set([...Object.keys(he),...Object.keys(le)])];
+    const payload=names.map(n=>{
+      const existing=TECH_MAP[n]||{};
+      const h=he[n], l=le[n];
+      return {
+        name:n,
+        tier:existing.tier||null,
+        region:(h&&h.region)||(l&&l.region)||existing.region||null,
+        he_priority:h?h.priority:null, he_region:h?(h.region||null):null,
+        le_priority:l?l.priority:null, le_region:l?(l.region||null):null,
+        active: existing.active===false ? false : true
+      };
+    });
+    for(let i=0;i<payload.length;i+=200){
+      const {error}=await sb.from('technicians').upsert(payload.slice(i,i+200),{onConflict:'name'});
+      if(error) throw error;
+    }
+    const added=names.filter(n=>!TECH_MAP[n]);
+    await reloadTechs();
+    if($('#tab-techs').classList.contains('on')) renderTechs();
+    markSynced();
+    st.textContent=`Done — ${names.length} technicians synced, ${added.length} new added.`;
+    if(!silent) toast('Priorities synced from Google Sheet');
+    return true;
+  }catch(err){
+    st.textContent='';
+    if(silent) console.warn('Auto-sync failed:', err);
+    else toast('Sync failed: '+(err.message||err),true);
+    return false;
+  }finally{ btn.disabled=false; }
+}
+$('#syncBtn').addEventListener('click', ()=>syncPriorities({silent:false}));
+
+async function autoSyncIfStale(){
+  const ts=Number(lsGet(SYNC_TS_KEY));
+  updateSyncBadge();
+  if(!ts || Date.now()-ts > SYNC_MAX_AGE){
+    const ok=await syncPriorities({silent:true});
+    if(ok && $('#tab-meet').classList.contains('on')) renderMeet();
+  }
+}
+
+/* ---------------- init ---------------- */
+(async ()=>{
+  const cfg=getCfg();
+  if(cfg&&cfg.url&&cfg.key){
+    $('#cfgUrl').value=cfg.url; $('#cfgKey').value=cfg.key;
+    await connect(cfg.url,cfg.key);
+  } else {
+    $('#connDot').classList.add('off');
+  }
+})();
+</script>
+</body>
+</html>
