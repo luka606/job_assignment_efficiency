@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AR LE — Technician Performance Boards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --ink:#15181d;
+    --paper:#eceae4;
+    --card:#ffffff;
+    --line:#d8d4c8;
+    --muted:#6b6a63;
+    --a-color:#1f7a4d;
+    --a-bg:#e3f1e8;
+    --b-color:#9a6a10;
+    --b-bg:#f7ecd6;
+    --c-color:#a13d2f;
+    --c-bg:#f6e4e0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+  }
+  header{
+    padding:48px 40px 28px;
+    border-bottom:1px solid var(--line);
+  }
+  header .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  header h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:34px;
+    margin:0 0 6px;
+    font-weight:700;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:14px;
+    max-width:640px;
+    line-height:1.5;
+  }
+
+  .controls{
+    padding:20px 40px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:center;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  .search-wrap{
+    position:relative;
+    flex:1 1 240px;
+    max-width:320px;
+  }
+  .search-wrap svg{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:15px;
+    height:15px;
+    stroke:var(--muted);
+    fill:none;
+    stroke-width:2;
+  }
+  #search{
+    width:100%;
+    padding:9px 14px 9px 34px;
+    border:1px solid var(--line);
+    border-radius:100px;
+    background:var(--card);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    outline:none;
+  }
+  #search:focus{border-color:var(--ink);}
+  .chip-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:7px 14px;
+    border:1px solid var(--line);
+    border-radius:100px;
+    background:var(--card);
+    cursor:pointer;
+    color:var(--ink);
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .chip:hover{border-color:var(--ink);}
+  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  .count{
+    padding:14px 40px 0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .grid{
+    padding:20px 40px 80px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(380px,1fr));
+    gap:18px;
+    align-items:start;
+  }
+  .no-results{
+    padding:50px;
+    text-align:center;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    grid-column:1/-1;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  .card.grade-A{border-left-color:var(--a-color);}
+  .card.grade-B{border-left-color:var(--b-color);}
+  .card.grade-C{border-left-color:var(--c-color);}
+  .card.open{
+    border-color:#b9b4a4;
+    box-shadow:0 6px 20px rgba(20,18,12,0.08);
+  }
+  .card.open.grade-A{border-left-color:var(--a-color);}
+  .card.open.grade-B{border-left-color:var(--b-color);}
+  .card.open.grade-C{border-left-color:var(--c-color);}
+  .card-head{
+    padding:20px 22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .card-head:hover{background:#f8f7f3;}
+  .head-left{display:flex;align-items:center;gap:14px;min-width:0;}
+  .chevron{
+    width:9px;height:9px;
+    border-right:2px solid var(--muted);
+    border-bottom:2px solid var(--muted);
+    transform:rotate(-45deg);
+    transition:transform .18s ease;
+    flex:none;
+  }
+  .card.open .chevron{transform:rotate(45deg);}
+  .card-head .name{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 3px;
+    line-height:1.2;
+  }
+  .card-head .region{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+  }
+  .head-right{display:flex;align-items:center;gap:12px;flex:none;}
+  .adl-preview{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:16px;
+    font-weight:600;
+    text-align:right;
+    line-height:1.2;
+  }
+  .adl-preview .tag{
+    display:block;
+    font-size:9.5px;
+    letter-spacing:.06em;
+    color:var(--muted);
+    text-transform:uppercase;
+    font-weight:500;
+    font-family:'Inter',sans-serif;
+    margin-bottom:2px;
+  }
+  .grade{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.03em;
+    padding:6px 13px;
+    border-radius:100px;
+    white-space:nowrap;
+  }
+  .grade.A{color:var(--a-color);background:var(--a-bg);}
+  .grade.B{color:var(--b-color);background:var(--b-bg);}
+  .grade.C{color:var(--c-color);background:var(--c-bg);}
+
+  .card-body{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .28s ease;
+  }
+  .card.open .card-body{max-height:1000px;}
+  .card-body-inner{border-top:1px solid var(--line);}
+
+  .metrics{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .metric{
+    padding:15px 22px;
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .metric:nth-child(2n){border-right:none;}
+  .metric .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  .metric .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:17px;
+    font-weight:600;
+  }
+  .metric.adl .value{font-size:19px;}
+
+  .summary{padding:18px 22px 20px;}
+  .summary .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .summary p{
+    margin:0;
+    font-size:14.5px;
+    line-height:1.65;
+    color:#2a2924;
+  }
+  .summary .flag{
+    display:inline-block;
+    margin-top:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--c-color);
+    background:var(--c-bg);
+    padding:4px 10px;
+    border-radius:100px;
+  }
+  .final-line{margin:12px 0 0;font-weight:600;font-size:14.5px;}
+
+  .card-actions{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    padding:0 22px 20px;
+  }
+  .copy-status{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--a-color);
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .copy-status.show{opacity:1;}
+  .copy-btn{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border:1px solid var(--ink);
+    border-radius:100px;
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  .copy-btn:hover{opacity:.85;}
+  .copy-btn svg{width:13px;height:13px;stroke:var(--paper);fill:none;stroke-width:2;}
+
+  /* snapshot template used only for image export, positioned off-screen */
+  .snapshot{
+    position:fixed;
+    top:-9999px;
+    left:-9999px;
+    width:560px;
+    background:var(--card);
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--line);
+    border-left:6px solid var(--line);
+  }
+  .snapshot.grade-A{border-left-color:var(--a-color);}
+  .snapshot.grade-B{border-left-color:var(--b-color);}
+  .snapshot.grade-C{border-left-color:var(--c-color);}
+  .snapshot .s-head{
+    padding:26px 28px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    border-bottom:1px solid var(--line);
+  }
+  .snapshot .s-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:24px;
+    font-weight:700;
+    margin:0 0 5px;
+  }
+  .snapshot .s-region{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+  }
+  .snapshot .s-metrics{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .snapshot .s-metric{
+    padding:18px 28px;
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .snapshot .s-metric:nth-child(2n){border-right:none;}
+  .snapshot .s-metric .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .snapshot .s-metric .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:19px;
+    font-weight:600;
+  }
+  .snapshot .s-summary{padding:22px 28px 26px;}
+  .snapshot .s-summary .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .snapshot .s-summary p{
+    margin:0;
+    font-size:15px;
+    line-height:1.7;
+    color:#2a2924;
+  }
+  .snapshot .s-final{margin:14px 0 0;font-weight:600;font-size:15px;}
+  .snapshot .s-flag{
+    display:inline-block;
+    margin-top:12px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--c-color);
+    background:var(--c-bg);
+    padding:5px 11px;
+    border-radius:100px;
+  }
+  .snapshot .s-foot{
+    padding:16px 28px 24px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">AR LE — Appliance Repair Low End · Individual Boards</div>
+  <h1>Technician Performance</h1>
+  <p>Classification is based solely on ADL ($/lead): ≤$250 = C Player, $251–$300 = B Player, &gt;$300 = A Player. Acceptance rate, closing ratio, and revenue inform commentary only.</p>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="search" type="text" placeholder="Search technician or region…">
+  </div>
+  <div class="chip-row" id="controls-chips"></div>
+</div>
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+<div class="snapshot" id="snapshot"></div>
+
+<script>
+const techs = [
+  {name:"4 LA Gregory", region:"Los Angeles", jobs:12, rejected:0, sold:7, collected:2958.00, estimate:389.00, invoiced:2958.00, adl:246.50, closing:58.33},
+  {name:"4 LA Andrew S", region:"Los Angeles", jobs:11, rejected:0, sold:4, collected:1820.00, estimate:1394.00, invoiced:2440.00, adl:221.82, closing:36.36},
+  {name:"4 OC Alexey", region:"Orange County", jobs:9, rejected:0, sold:2, collected:1199.00, estimate:5125.52, invoiced:1476.52, adl:164.06, closing:22.22},
+  {name:"4 LA Jin", region:"Los Angeles", jobs:7, rejected:0, sold:3, collected:3816.00, estimate:5099.00, invoiced:6068.00, adl:866.86, closing:42.86},
+  {name:"4 SF Vladimir", region:"San Francisco/San Jose", jobs:6, rejected:0, sold:3, collected:1105.82, estimate:1368.32, invoiced:1368.32, adl:228.05, closing:50.00},
+  {name:"4 SAC Louis", region:"Sacramento", jobs:6, rejected:0, sold:1, collected:839.00, estimate:1246.00, invoiced:744.00, adl:124.00, closing:16.67},
+  {name:"4 LA Ruslan", region:"Los Angeles", jobs:6, rejected:0, sold:3, collected:509.00, estimate:3687.00, invoiced:1067.00, adl:177.83, closing:50.00},
+  {name:"4 Riverside Trent", region:"San Bernardino", jobs:5, rejected:0, sold:2, collected:455.00, estimate:1755.00, invoiced:1005.00, adl:201.00, closing:40.00},
+  {name:"4 Phoenix Domenic", region:"Phoenix", jobs:5, rejected:0, sold:2, collected:149.00, estimate:1618.00, invoiced:909.00, adl:181.80, closing:40.00},
+  {name:"4 LV Roman", region:"Las Vegas", jobs:4, rejected:0, sold:0, collected:120.00, estimate:1970.00, invoiced:120.00, adl:30.00, closing:0.00},
+  {name:"4 Bakersfield Byron", region:"Los Angeles", jobs:4, rejected:0, sold:0, collected:228.00, estimate:942.76, invoiced:228.00, adl:57.00, closing:0.00},
+  {name:"4 SJ Marcus", region:"San Jose", jobs:4, rejected:0, sold:2, collected:1744.00, estimate:1349.00, invoiced:1744.00, adl:436.00, closing:50.00},
+  {name:"4 LA Sargis", region:"Los Angeles", jobs:3, rejected:0, sold:2, collected:1099.00, estimate:780.00, invoiced:1099.00, adl:366.33, closing:66.67},
+  {name:"4 OC Samuel", region:"Orange County", jobs:3, rejected:0, sold:1, collected:597.00, estimate:514.00, invoiced:597.00, adl:199.00, closing:33.33},
+  {name:"4 SB Artashes", region:"Ventura/Santa Barbara", jobs:2, rejected:0, sold:2, collected:1595.00, estimate:1280.00, invoiced:1555.00, adl:777.50, closing:100.00},
+  {name:"4 OC Aliaksandr", region:"Orange County", jobs:2, rejected:0, sold:2, collected:750.00, estimate:0.00, invoiced:1905.00, adl:952.50, closing:100.00},
+  {name:"4 Phoenix Russel", region:"Phoenix", jobs:2, rejected:0, sold:0, collected:298.00, estimate:0.00, invoiced:298.00, adl:149.00, closing:0.00},
+  {name:"4 Oakland Nick", region:"Oakland", jobs:2, rejected:0, sold:0, collected:0.00, estimate:0.00, invoiced:0.00, adl:0.00, closing:0.00},
+  {name:"4 Ventura Vram", region:"Ventura", jobs:2, rejected:0, sold:1, collected:300.00, estimate:1200.00, invoiced:700.00, adl:350.00, closing:50.00},
+  {name:"4 SF Dan", region:"San Francisco", jobs:2, rejected:0, sold:2, collected:330.00, estimate:0.00, invoiced:587.00, adl:293.50, closing:100.00},
+  {name:"4 OC Victor", region:"Orange County", jobs:1, rejected:0, sold:1, collected:650.00, estimate:650.00, invoiced:650.00, adl:650.00, closing:100.00},
+  {name:"4 Oakland Luiz", region:"Oakland", jobs:1, rejected:0, sold:0, collected:0.00, estimate:0.00, invoiced:0.00, adl:0.00, closing:0.00},
+  {name:"4 Seattle Ilia", region:"Seattle", jobs:1, rejected:0, sold:1, collected:449.00, estimate:0.00, invoiced:449.00, adl:449.00, closing:100.00},
+  {name:"4 SF Anton", region:"San Francisco", jobs:1, rejected:0, sold:0, collected:0.00, estimate:0.00, invoiced:0.00, adl:0.00, closing:0.00},
+  {name:"4 SD Roman", region:"San Diego", jobs:1, rejected:0, sold:1, collected:300.00, estimate:468.00, invoiced:468.00, adl:468.00, closing:100.00},
+  {name:"1 SD Ivan", region:"San Diego", jobs:1, rejected:0, sold:0, collected:0.00, estimate:0.00, invoiced:0.00, adl:0.00, closing:0.00},
+  {name:"4 PS Erik", region:"Palm Springs", jobs:1, rejected:0, sold:1, collected:200.00, estimate:0.00, invoiced:478.34, adl:478.34, closing:100.00},
+  {name:"4 LA Kirill", region:"Los Angeles", jobs:1, rejected:0, sold:1, collected:284.00, estimate:0.00, invoiced:512.00, adl:512.00, closing:100.00},
+  {name:"4 Phoenix Dave", region:"Phoenix", jobs:1, rejected:0, sold:1, collected:300.00, estimate:715.00, invoiced:715.00, adl:715.00, closing:100.00},
+];
+
+function classify(adl){ if(adl <= 250) return "C"; if(adl <= 300) return "B"; return "A"; }
+function gradeName(g){ return g === "A" ? "A Player" : g === "B" ? "B Player" : "C Player"; }
+function fmtMoney(n){ return "$" + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function acceptanceRate(t){ return ((t.jobs - t.rejected) / t.jobs * 100).toFixed(0) + "%"; }
+function summaryText(t, grade){
+  const limited = t.jobs < 3;
+  let s = `${limited ? "On a limited sample of " + t.jobs + " job" + (t.jobs===1?"":"s") + ", " : ""}`;
+  s += `acceptance rate is ${acceptanceRate(t)} (${t.rejected} rejected of ${t.jobs}), with a ${t.closing.toFixed(2)}% closing ratio on ${fmtMoney(t.invoiced)} invoiced. `;
+  s += `ADL of ${fmtMoney(t.adl)} places this technician in the ${gradeName(grade)} tier`;
+  s += grade === "A" ? ", reflecting strong per-job value." : grade === "B" ? ", a mid-range per-job value." : ", below the $250 per-job value benchmark.";
+  return s;
+}
+
+const regions = [...new Set(techs.map(t => t.region))].sort();
+const chipsWrap = document.getElementById('controls-chips');
+let activeRegion = null;
+
+const allChip = document.createElement('div');
+allChip.className = 'chip active';
+allChip.textContent = 'All Regions';
+allChip.onclick = () => { activeRegion = null; setActiveChip(allChip); render(); };
+chipsWrap.appendChild(allChip);
+
+regions.forEach(r => {
+  const chip = document.createElement('div');
+  chip.className = 'chip';
+  chip.textContent = r;
+  chip.onclick = () => { activeRegion = r; setActiveChip(chip); render(); };
+  chipsWrap.appendChild(chip);
+});
+
+function setActiveChip(el){
+  [...chipsWrap.children].forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+document.getElementById('search').addEventListener('input', render);
+
+function matchesSearch(t, q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  return t.name.toLowerCase().includes(q) || t.region.toLowerCase().includes(q);
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  const q = document.getElementById('search').value.trim();
+  grid.innerHTML = '';
+
+  const list = techs
+    .filter(t => (!activeRegion || t.region === activeRegion) && matchesSearch(t, q))
+    .sort((a,b) => b.adl - a.adl);
+
+  document.getElementById('count').textContent = `${list.length} technician${list.length===1?'':'s'} shown`;
+
+  if(list.length === 0){
+    grid.innerHTML = `<div class="no-results">No technician matches "${q}".</div>`;
+    return;
+  }
+
+  list.forEach((t, i) => {
+    const grade = classify(t.adl);
+    const cardId = `card-${i}-${t.name.replace(/\W+/g,'')}`;
+    const card = document.createElement('div');
+    card.className = `card grade-${grade}`;
+    card.id = cardId;
+    card.innerHTML = `
+      <div class="card-head" onclick="toggleCard('${cardId}')">
+        <div class="head-left">
+          <div class="chevron"></div>
+          <div>
+            <p class="name">${t.name}</p>
+            <p class="region">${t.region}</p>
+          </div>
+        </div>
+        <div class="head-right">
+          <div class="adl-preview" style="color:var(--${grade === 'A' ? 'a' : grade === 'B' ? 'b' : 'c'}-color)"><span class="tag">ADL</span>${fmtMoney(t.adl)}</div>
+          <div class="grade ${grade}">${gradeName(grade)}</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-body-inner">
+          <div class="metrics">
+            <div class="metric"><div class="label">Total Jobs</div><div class="value">${t.jobs}</div></div>
+            <div class="metric"><div class="label">Rejected by Tech</div><div class="value">${t.rejected}</div></div>
+            <div class="metric"><div class="label">Acceptance Rate</div><div class="value">${acceptanceRate(t)}</div></div>
+            <div class="metric"><div class="label">Jobs Sold</div><div class="value">${t.sold}</div></div>
+            <div class="metric"><div class="label">Closing Ratio</div><div class="value">${t.closing.toFixed(2)}%</div></div>
+            <div class="metric"><div class="label">Estimated Opp.</div><div class="value">${fmtMoney(t.estimate)}</div></div>
+            <div class="metric"><div class="label">Invoiced Revenue</div><div class="value">${fmtMoney(t.invoiced)}</div></div>
+            <div class="metric adl"><div class="label">ADL</div><div class="value">${fmtMoney(t.adl)}</div></div>
+          </div>
+          <div class="summary">
+            <div class="label">Executive Summary</div>
+            <p>${summaryText(t, grade)}</p>
+            ${t.jobs < 3 ? '<div class="flag">Limited sample size</div>' : ''}
+            <p class="final-line">Final Classification: ${gradeName(grade)}</p>
+          </div>
+          <div class="card-actions">
+            <span class="copy-status" id="status-${cardId}">Copied ✓</span>
+            <button class="copy-btn" onclick="event.stopPropagation(); copyAsImage(${i})">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>
+              Copy as image
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleCard(id){
+  document.getElementById(id).classList.toggle('open');
+}
+
+function buildSnapshot(t, grade){
+  const snap = document.getElementById('snapshot');
+  snap.className = `snapshot grade-${grade}`;
+  const gradeVar = grade === 'A' ? 'a' : grade === 'B' ? 'b' : 'c';
+  snap.innerHTML = `
+    <div class="s-head">
+      <div>
+        <p class="s-name">${t.name}</p>
+        <p class="s-region">${t.region}</p>
+      </div>
+      <div class="grade ${grade}" style="font-size:13px;padding:7px 15px;">${gradeName(grade)}</div>
+    </div>
+    <div class="s-metrics">
+      <div class="s-metric"><div class="label">Total Jobs</div><div class="value">${t.jobs}</div></div>
+      <div class="s-metric"><div class="label">Rejected by Tech</div><div class="value">${t.rejected}</div></div>
+      <div class="s-metric"><div class="label">Acceptance Rate</div><div class="value">${acceptanceRate(t)}</div></div>
+      <div class="s-metric"><div class="label">Jobs Sold</div><div class="value">${t.sold}</div></div>
+      <div class="s-metric"><div class="label">Closing Ratio</div><div class="value">${t.closing.toFixed(2)}%</div></div>
+      <div class="s-metric"><div class="label">Estimated Opp.</div><div class="value">${fmtMoney(t.estimate)}</div></div>
+      <div class="s-metric"><div class="label">Invoiced Revenue</div><div class="value">${fmtMoney(t.invoiced)}</div></div>
+      <div class="s-metric"><div class="label">ADL</div><div class="value" style="color:var(--${gradeVar}-color)">${fmtMoney(t.adl)}</div></div>
+    </div>
+    <div class="s-summary">
+      <div class="label">Executive Summary</div>
+      <p>${summaryText(t, grade)}</p>
+      ${t.jobs < 3 ? '<div class="s-flag">Limited sample size</div>' : ''}
+      <p class="s-final">Final Classification: ${gradeName(grade)}</p>
+    </div>
+    <div class="s-foot">AR LE · Performance · 5 Star Appliance</div>
+  `;
+  return snap;
+}
+
+async function copyAsImage(index){
+  const list = techs
+    .filter(t => (!activeRegion || t.region === activeRegion) && matchesSearch(t, document.getElementById('search').value.trim()))
+    .sort((a,b) => b.adl - a.adl);
+  const t = list[index];
+  const grade = classify(t.adl);
+  const snap = buildSnapshot(t, grade);
+
+  const canvas = await html2canvas(snap, {backgroundColor:'#ffffff', scale:2});
+  const cardId = `card-${index}-${t.name.replace(/\W+/g,'')}`;
+  const statusEl = document.getElementById(`status-${cardId}`);
+
+  canvas.toBlob(async (blob) => {
+    try{
+      await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+      if(statusEl){ statusEl.classList.add('show'); setTimeout(()=>statusEl.classList.remove('show'), 2000); }
+    }catch(e){
+      const link = document.createElement('a');
+      link.download = `${t.name.replace(/\s+/g,'_')}_performance.png`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      if(statusEl){ statusEl.textContent = 'Downloaded ✓'; statusEl.classList.add('show'); setTimeout(()=>statusEl.classList.remove('show'), 2000); }
+    }
+  }, 'image/png');
+}
+
+render();
+</script>
+</body>
+</html>
